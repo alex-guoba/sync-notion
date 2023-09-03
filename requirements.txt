@@ -1,0 +1,5 @@
+requests
+notion-client
+treelib
+fire
+pyquery
