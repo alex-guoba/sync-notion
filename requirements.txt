@@ -3,3 +3,4 @@ notion-client
 treelib
 fire
 pyquery
+PyGithub
