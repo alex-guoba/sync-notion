@@ -76,6 +76,8 @@ python3 ./main.py sync_trending
 * 添加以下变量
   * NOTION_TOKEN
   * NOTION_DATABASE_TRENDING
+  * GIT_TOKEN
+如果不需要仓库的其他信息（包括fork、star、watcher数量），GIT_TOKEN可以不配置
 
 #### 支持的配置项
 
