@@ -114,6 +114,19 @@ def _scrape(language: str) -> list[TrendItem]:
 
     return result
 
+def _filter_repo(trend: TrendItem) -> bool:
+    filters = {
+        'MinStargazers': 'stargazers_count',
+        'MinForks': 'forks_count',
+        'MinWatchers': 'watchers_count',
+    }
+    for k, v in filters.items():
+        thresh_hold = CONFIG.getint("trending.language", k)
+        current = getattr(trend, v, 0)
+        if thresh_hold > 0 and current < thresh_hold:
+            return True
+    return False
+
 # pylint: disable=line-too-long
 def _sync(client: Client, database_id: str, language: str, trends: list[TrendItem], git_token: str) -> None:
     for trend in trends:
@@ -126,8 +139,11 @@ def _sync(client: Client, database_id: str, language: str, trends: list[TrendIte
         if git_token:
             trend.fullfill_repo_info(git_token)
 
-        insert_page(client, database_id, language, trend)
+        if _filter_repo(trend):
+            logging.info("ignore %s", trend.title)
+            continue
 
+        insert_page(client, database_id, language, trend)
 
 def sync_trending(notion_token, database_id, git_token=None):
     """同步github trending到notion"""
@@ -136,7 +152,7 @@ def sync_trending(notion_token, database_id, git_token=None):
         log_level=logging.ERROR
     )
 
-    languages = list(map(lambda x: x.strip(), CONFIG.get("trending.language", "languages").split(",")))
+    languages = list(map(lambda x: x.strip(), CONFIG.get("trending.language", "Languages").split(",")))
     for language in languages:
         if not language:
             continue
