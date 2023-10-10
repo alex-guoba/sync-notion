@@ -1,6 +1,6 @@
-# 将微信读书、github trending同步到Notion
+# 将微信读书、github trending、memos同步到Notion
 
-本项目支持将微信读书笔记（划线及评论）、github trending到Notion。支持本地手工、github action定期两种方式。可以修改action配置自行按需选择。
+本项目支持将微信读书笔记（划线及评论）、github trending以及memos同步Notion。支持本地手工、github action定期两种方式。可以修改action配置自行按需选择。
 
 ### 同步微信读书笔记
 
@@ -112,7 +112,7 @@ MemosHost = http://127.0.0.1:8081
 MemosUserName = memos-demo
 ```
 
-也可配置github action来实现定期同步，有需要修改github action即可。
+也可配置github action来实现定期同步，有需要修改github action以及配置对应环境即可即可。
 
 ```shell
 python3 ./main.py sync_memos NOTION_TOKEN DATABASE_ID MEMOS_TOKEN
@@ -121,5 +121,6 @@ python3 ./main.py sync_memos NOTION_TOKEN DATABASE_ID MEMOS_TOKEN
 
 ## 感谢
 
-- [weread_to_notion](https://github.com/malinkang/weread_to_notion)
-- [github-trending](https://github.com/bonfy/github-trending)
+- [malinkang / weread_to_notion](https://github.com/malinkang/weread_to_notion)
+- [bonfy / github-trending](https://github.com/bonfy/github-trending)
+- [usememos / memos](https://github.com/usememos/memos)
