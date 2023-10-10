@@ -40,6 +40,7 @@
 8. 也可以本地运行脚本: 
 
    ```shell
+   pip install -r requirements.txt
    python3 ./main.py sync_weread 
    ```
 
@@ -62,15 +63,17 @@ EnableEmoj = false
 
 与微信读书同步方法基本一致。
 
-1. notion模板参考[这个](https://gelco.notion.site/77a3c6c8c2fb405e8347a7bde96d51d1?v=5c6464969afa432ea473f07c7b6959e8)
+1. 获取NotionToken（可复用）
 
-2. 本地运行
+2. 创建NotionDatabase，获取NotionDatabaseID， notion模板参考[这个](https://gelco.notion.site/77a3c6c8c2fb405e8347a7bde96d51d1?v=5c6464969afa432ea473f07c7b6959e8)
+
+3. 本地运行
 
 ```shell
 python3 ./main.py sync_trending
 ```
 
-3. 或者在Github的Secrets中添加以下变量来实现每日自动同步
+4. 或者在Github的Secrets中添加以下变量来实现每日自动同步
 
 * 打开你fork的工程，点击Settings->Secrets and variables->New repository secret
 * 添加以下变量
@@ -87,6 +90,34 @@ languages = python,go
 ```
 
 - languages: 关注的项目语言，不允许为空
+
+
+### 同步Memos发表到Notion
+
+#### 使用
+
+与微信读书同步方法基本一致。
+
+1. 获取NotionToken（可复用）
+
+2. 创建NotionDatabase，获取NotionDatabaseID， notion模板参考[这个](https://gelco.notion.site/b840c05d92af44719ee3d9d7f73010f8?v=f0a726764fa3455b9a28f50783eea58a&pvs=4)
+
+3. 在Memos平台为用户分配一个独立的Token供访问Memos使用。
+   
+4. 配置文件，设置memos host地址以及拉取人UserName。注意分配Token的用户身份与拉取人UserName一致才可以拉取到Private memo。
+
+```ini
+[memos.opts]
+MemosHost = http://127.0.0.1:8081
+MemosUserName = memos-demo
+```
+
+也可配置github action来实现定期同步，有需要修改github action即可。
+
+```shell
+python3 ./main.py sync_memos NOTION_TOKEN DATABASE_ID MEMOS_TOKEN
+```
+
 
 ## 感谢
 

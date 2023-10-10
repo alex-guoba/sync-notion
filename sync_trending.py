@@ -146,7 +146,7 @@ def _sync(client: Client, database_id: str, language: str, trends: list[TrendIte
         insert_page(client, database_id, language, trend)
 
 def sync_trending(notion_token, database_id, git_token=None):
-    """同步github trending到notion"""
+    """sync github trending to notion"""
     client = Client(
         auth=notion_token,
         log_level=logging.ERROR

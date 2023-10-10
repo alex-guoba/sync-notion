@@ -289,7 +289,7 @@ def calculate_book_str_id(book_id):
 
 
 def sync_read(weread_cookie, notion_token, database_id):
-    """同步微信读书笔记到notion"""
+    """sync weread reading notes to notion"""
     client = Client(
         auth=notion_token,
         log_level=logging.ERROR
