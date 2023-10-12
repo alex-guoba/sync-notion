@@ -2,9 +2,13 @@
 
 本项目支持将微信读书笔记（划线及评论）、github trending以及memos同步Notion。支持本地手工、github action定期两种方式。可以修改action配置自行按需选择。
 
-### 同步微信读书笔记
+## Requirements
 
-#### 使用
+Python 3.10
+
+## 同步微信读书笔记
+
+### 使用
 
 1. star本项目
 
@@ -44,7 +48,7 @@
    python3 ./main.py sync_weread ${WEREAD_COOKIE} ${NOTION_TOKEN} ${NOTION_DATABASE_ID}
    ```
 
-#### 支持的配置项
+### 支持的配置项
 
 ```ini
 [weread.format]
@@ -57,9 +61,9 @@ EnableEmoj = false
 
 
 
-### 同步Github Trending
+## 同步Github Trending
 
-#### 使用
+### 使用
 
 与微信读书同步方法基本一致。
 
@@ -84,7 +88,7 @@ python3 ./main.py sync_trending ${NOTION_TOKEN} ${NOTION_DATABASE_TRENDING} --gi
 如果不需要仓库的其他信息（包括fork、star、watcher数量），GIT_TOKEN可以不配置
 
 
-#### 支持的配置项
+### 支持的配置项
 
 ```ini
 [trending.language]
@@ -94,9 +98,9 @@ languages = python,go
 - languages: 关注的项目语言，不允许为空
 
 
-### 同步Memos发表到Notion
+## 同步Memos发表到Notion
 
-#### 使用
+### 使用
 
 与微信读书同步方法基本一致。
 
