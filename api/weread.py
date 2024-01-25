@@ -116,9 +116,22 @@ class WeReadAPI:
         return (isbn, rating, category)
     
     def get_read_info(self, bookId):
+        """获取书籍的进度"""
         params = dict(bookId=bookId, readingDetail=1,
                     readingBookIndex=1, finishedDate=1)
         r = self.session.get(self.WEREAD_READ_INFO_URL, params=params)
         if r.ok:
             return r.json()
         return None
+
+
+def str_reading_time(reading_time: int):
+    "convert reading time to str"
+    format_time = ""
+    hour = reading_time // 3600
+    if hour > 0:
+        format_time += f"{hour}时"
+    minutes = reading_time % 3600 // 60
+    if minutes > 0:
+        format_time += f"{minutes}分"
+    return format_time

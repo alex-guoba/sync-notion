@@ -1,3 +1,6 @@
+""" sync wereading history to private notion database & pages 
+author: alex-guoba
+"""
 import logging
 import re
 import time
@@ -42,59 +45,45 @@ def create_page(client, database_id, book_name='', book_id='', cover='', sort=0,
         "database_id": database_id,
         "type": "database_id"
     }
+
     properties = {
-        "BookName": {"title": [{"type": "text", "text": {"content": book_name}}]},
-        "BookId": {"rich_text": [{"type": "text", "text": {"content": book_id}}]},
-        "ISBN": {"rich_text": [{"type": "text", "text": {"content": isbn}}]},
-        "URL": {"url": f"https://weread.qq.com/web/reader/{calculate_book_str_id(book_id)}"},
-        "Author": {"rich_text": [{"type": "text", "text": {"content": author}}]},
-        "Sort": {"number": sort},
-        "Rating": {"number": rating},
-        "Cover": {"files": [{"type": "external", "name": "Cover", "external": {"url": cover}}]},
-        "NoteCount": {"number": note_count},
-        "Category": {"rich_text": [{"type": "text", "text": {"content": category}}]},
+        "BookName": BlockHelper.title(book_name),
+        "BookId": BlockHelper.rich_text(book_id),
+        "ISBN": BlockHelper.rich_text(isbn),
+        "URL": BlockHelper.url(f"https://weread.qq.com/web/reader/{calculate_book_str_id(book_id)}"),
+        "Author": BlockHelper.rich_text(author),
+        "Sort": BlockHelper.number(sort),
+        "Rating": BlockHelper.number(rating),
+        "Cover": BlockHelper.files("Cover", cover),
+        "NoteCount": BlockHelper.number(note_count),
+        "Category": BlockHelper.rich_text(category),
     }
 
     if read_info:
         marked_status = read_info.get("markedStatus", 0)
-        reading_time = read_info.get("readingTime", 0)
-        format_time = ""
-        hour = reading_time // 3600
-        if hour > 0:
-            format_time += f"{hour}时"
-        minutes = reading_time % 3600 // 60
-        if minutes > 0:
-            format_time += f"{minutes}分"
-        properties["Status"] = {"select": {
-            "name": "读完" if marked_status == 4 else "在读"}}
-        properties["ReadingTime"] = {"rich_text": [
-            {"type": "text", "text": {"content": format_time}}]}
+        properties["Status"] = BlockHelper.select("读完" if marked_status == 4 else "在读")
+
+        format_time = weread.str_reading_time(read_info.get("readingTime", 0))
+        properties["ReadingTime"] = BlockHelper.rich_text(format_time)
 
         # 最近阅读
         detail = read_info.get('readDetail', {})
         if detail.get('lastReadingDate'):
-            properties["lastReadingDate"] = {"date": {"start": datetime.utcfromtimestamp(
-                detail.get("lastReadingDate")).strftime("%Y-%m-%d %H:%M:%S"), "time_zone": "Asia/Shanghai"}}
+            properties["lastReadingDate"] = BlockHelper.date(detail.get("lastReadingDate"))
 
         # 完成时间
         if read_info.get("finishedDate"):
-            properties["FinishAt"] = {"date": {"start": datetime.utcfromtimestamp(
-                read_info.get("finishedDate")).strftime("%Y-%m-%d %H:%M:%S"), "time_zone": "Asia/Shanghai"}}
+            properties["FinishAt"] = BlockHelper.date(detail.get("finishedDate"))
 
-    icon = {
-        "type": "external",
-        "external": {
-            "url": cover
-        }
-    }
-    # notion api 限制100个block
-    response = client.pages.create(
-        parent=parent, icon=icon, properties=properties)
+    # print(properties)
+
+    response = client.pages.create(parent=parent, icon=BlockHelper.icon(cover), properties=properties)
     return response["id"]
 
 
 def add_children(client, pid, children):
-    """追加child block"""
+    """append child block to page. Notion API limit 100 blocker per appending
+    """
     results = []
     for i in range(0, len(children)//100+1):
         time.sleep(0.3)
@@ -105,12 +94,11 @@ def add_children(client, pid, children):
 
 
 def add_grandchild(client, grandchild, results):
-    """追加grand child block"""
+    """appending grand child blocks"""
     for key, value in grandchild.items():
         time.sleep(0.3)
         block_id = results[key].get("id")
-        client.blocks.children.append(block_id=block_id, children=[value])
-
+        client.blocks.children.append(block_id=block_id, children=value)
 
 def get_db_latest_sort(client, database_id):
     """获取database中的最新时间"""
@@ -202,13 +190,15 @@ def content_block(text: str, style: str, color: str, review_id: str) -> dict:
             return BlockHelper.paragraph(text, style, color, review_id, enable_emoj=enable_emoj)
 
 
-def get_children(chapters_list, summary, bookmark_list):
+def get_page_blocks(chapters_list, summary, bookmark_list, read_detail):
+    "generate page blocks"
     children = []
-    grandchild = {}
+    grandchild = defaultdict(list)
 
     if len(chapters_list) > 0:
         # 添加目录
         children.append(BlockHelper.table_of_contents())
+        children.append(BlockHelper.divider())
 
         chapter_tree = gen_chapter_tree(chapters_list)
         mount_bookmarks(chapter_tree, bookmark_list)
@@ -228,20 +218,45 @@ def get_children(chapters_list, summary, bookmark_list):
                 children.append(content_block(i.get("markText"), i.get("style"), i.get("colorStyle"), i.get("reviewId")))
 
                 if i.get("abstract"):  # 评语，写入quote信息
-                    quote = BlockHelper.quote(i.get("abstract"))
-                    grandchild[len(children)-1] = quote
+                    grandchild[len(children)-1].append(BlockHelper.quote(i.get("abstract")))
     else:
-        # 如果没有章节信息
+        # no chapter info
         for data in bookmark_list:
-            # children.append(BlockHelper.callout(data.get("markText"), data.get("style"),
-            #                                     data.get("colorStyle"), data.get("reviewId")))
             children.append(content_block(data.get("markText"), data.get("style"), data.get("colorStyle"), data.get("reviewId")))
 
     # 追加推荐评语
     if summary:
-        children.append(BlockHelper.heading(1, "点评"))
+        children.extend([BlockHelper.divider(), BlockHelper.heading(1, "点评")])
         for i in summary:
-            children.append(content_block(i.get("review").get("content"), i.get("style"),i.get("colorStyle"), i.get("review").get("reviewId")))
+            children.append(content_block(i.get("review").get("content"), i.get("style"),
+                                          i.get("colorStyle"), i.get("review").get("reviewId")))
+
+    # 追加阅读统计
+    if read_detail and CONFIG.getboolean("weread.format", "EnableReadingDetail"):
+        children.extend([BlockHelper.divider(),
+                         BlockHelper.heading(1, "阅读明细"),
+                         BlockHelper.table(2, ['维度', '指标'], True)
+                         ])
+
+        longest_reading_time = weread.str_reading_time(read_detail.get('longestReadingTime', 0))
+        longest_reading_date = datetime.utcfromtimestamp(read_detail.get('longestReadingDate')).strftime("%Y/%m/%d")
+        grandchild[len(children)-1].extend([
+            BlockHelper.table_row(['累积阅读天数', str(read_detail.get('totalReadDay', 0))+ '天']),
+            BlockHelper.table_row(['最长连续阅读天数', str(read_detail.get('continueReadDays', 0)) + '天']),
+            BlockHelper.table_row(['单日阅读最久', f"{longest_reading_time} ({longest_reading_date})"]),
+            BlockHelper.table_row(['阅读笔记条数', str(len(bookmark_list)) + '条']),
+        ])
+
+
+        children.append(BlockHelper.table(2, ['日期', '阅读时长'], True))
+        for daily in read_detail.get('data'):
+            grandchild[len(children)-1].append(
+                BlockHelper.table_row([
+                    datetime.utcfromtimestamp(daily.get('readDate')).strftime("%Y/%m/%d"),
+                    weread.str_reading_time(daily.get('readTime', 0))
+                ])
+            )
+
 
     return children, grandchild
 
@@ -330,8 +345,7 @@ def sync_read(weread_cookie, notion_token, database_id):
                           note_count=_book.get("noteCount"),
                           read_info=read_info)
 
-        children, grandchild = get_children(
-            chapters_list, summary, bookmark_list)
+        children, grandchild = get_page_blocks(chapters_list, summary, bookmark_list, read_info.get("readDetail"))
         results = add_children(client, pid, children)
         if len(grandchild) > 0:
             add_grandchild(client, grandchild, results)

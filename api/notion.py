@@ -2,6 +2,9 @@
 封装notion相关操作
 """
 
+from datetime import datetime
+
+
 # class NotionAPI:
 #     """暂未启用"""
 
@@ -61,6 +64,46 @@ class BlockHelper:
                 "is_toggleable": False
             }
         }
+    
+    @classmethod
+    def table(cls, table_width: int, cells: list, has_column_header: bool = False, has_row_header: bool = False):
+        """table"""""
+        # heading_type = cls.headings.get(level, "heading_3")
+        table = {
+            "type": "table",
+            "table": {
+                "table_width": table_width,
+                "has_column_header": has_column_header,
+                "has_row_header": has_row_header
+            }
+        }
+        table['table']['children'] = [cls.table_row(cells)]
+
+        return table
+
+    @classmethod
+    def table_row(cls, content_list: list):
+        """table row, see https://developers.notion.com/reference/block#table-rows .
+        When creating a table block via the Append block children endpoint, the table 
+        must have at least one table_row whose cells array has the same length as the table_width.
+        """
+        table_row = {
+            "type": "table_row",
+            "table_row": {
+                "cells": [],
+            }
+        }
+        for content in content_list:
+            item = [
+                {
+                    "type": "text",
+                    "text": {
+                        "content": str(content),
+                    },
+                }
+            ]
+            table_row["table_row"]["cells"].append(item)
+        return table_row
 
     @classmethod
     def quote(cls, content):
@@ -77,7 +120,15 @@ class BlockHelper:
                 "color": "default"
             }
         }
-    
+
+    @classmethod
+    def divider(cls):
+        """"divier"""
+        return {
+            "type": "divider",
+            "divider": {}
+        }
+
     @classmethod
     def emoj_style(cls, style, review_id):
         """根据不同的划线样式设置不同的emoji 直线type=0 背景颜色是1 波浪线是2"""
@@ -148,5 +199,50 @@ class BlockHelper:
                     }
                 }],
                 "color": cls.color_styles.get(color, "default"),
+            }
+        }
+
+    @classmethod
+    def rich_text(cls, content):
+        "generate rich text"
+        return {"rich_text": [{"type": "text", "text": {"content": content}}]}
+
+    @classmethod
+    def title(cls, content):
+        "generate title block"
+        return {"title": [{"type": "text", "text": {"content": content}}]}
+
+    @classmethod
+    def url(cls, remoteurl):
+        "generate url block"
+        return {"url": remoteurl}
+
+    @classmethod
+    def number(cls, num):
+        "generate number block"
+        return {"number": num}
+
+    @classmethod
+    def files(cls, name, url):
+        "generate external file & media block"
+        return {"files": [{"type": "external", "name": name, "external": {"url": url}}]}
+
+    @classmethod
+    def select(cls, option):
+        "generate select block"
+        return {"select": {"name": option}}
+
+    @classmethod
+    def date(cls, d):
+        "generate date block"
+        return {"date": {"start": datetime.utcfromtimestamp(d).strftime("%Y-%m-%d %H:%M:%S"), "time_zone": "Asia/Shanghai"}}
+
+    @classmethod
+    def icon(cls, img):
+        """generate icon block"""
+        return {
+            "type": "external",
+            "external": {
+                "url": img
             }
         }

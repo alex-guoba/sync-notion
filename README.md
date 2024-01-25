@@ -44,10 +44,12 @@ python3 ./main.py sync_weread ${WEREAD_COOKIE} ${NOTION_TOKEN} ${NOTION_DATABASE
 [weread.format]
 ContentType = list
 EnableEmoj = false
+EnableReadingDetail = true
 ```
 
 * ContentType: Specifies the organization format of the note content blocks as paragraph/list/callout.
 * EnableEmoj: Disables emojis.
+* EnableReadingDetail: Add reading detail info to notes
 
 ## Synchronizing GitHub Trending
 

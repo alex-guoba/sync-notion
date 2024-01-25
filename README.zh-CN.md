@@ -59,8 +59,8 @@ EnableEmoj = false
 ```
 
 - ContentType：增加笔记内容block组织形式配置，可以将内容展现形态指定为paragraph/list/callout。
-- EnableEmoj：禁用emoj
-
+- EnableEmoj：开启、禁用emoj
+- EnableReadingDetail: 开启、禁用阅读明细。
 
 
 ## 同步Github Trending
