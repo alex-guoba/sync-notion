@@ -56,6 +56,7 @@ Python 3.10
 [weread.format]
 ContentType = list
 EnableEmoj = false
+EnableReadingDetail = true
 ```
 
 - ContentType：增加笔记内容block组织形式配置，可以将内容展现形态指定为paragraph/list/callout。

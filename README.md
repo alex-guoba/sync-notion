@@ -1,3 +1,7 @@
+<p align="center">
+  <img alt="Example Page" src="https://github.com/alex-guoba/sync-notion/assets/2872637/4bcb0692-8881-4f39-abce-22495c8a3fcc" width="689">
+</p>
+
 #  Syncing Wechat Book Notes, Github Trending, Memos to Notion automatically
 
 This project supports the synchronization of WeChat book notes, GitHub trending, and memos to Notion. It can be done locally or through regular GitHub actions, which can be customized according to your preferences.
