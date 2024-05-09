@@ -70,7 +70,7 @@ class WeReadAPI:
             return update
         else:
             print(r.text)
-        return {}
+        return []
     
     def get_bookmark_list(self, bookId):
         """获取书籍划线列表"""
@@ -86,7 +86,7 @@ class WeReadAPI:
         return []
     
     def get_review_list(self, bookId):
-        """获取笔记列表，包括笔记、推荐总结"""
+        """获取笔记列表，包括笔记评论、推荐总结"""
         params = dict(bookId=bookId, listType=11, mine=1, syncKey=0)
         r = self.session.get(self.WEREAD_REVIEW_LIST_URL, params=params)
         if r.ok:
@@ -122,8 +122,7 @@ class WeReadAPI:
         r = self.session.get(self.WEREAD_READ_INFO_URL, params=params)
         if r.ok:
             return r.json()
-        return None
-
+        return {}
 
 def str_reading_time(reading_time: int):
     "convert reading time to str"

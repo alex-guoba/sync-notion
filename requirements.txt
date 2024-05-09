@@ -4,3 +4,4 @@ treelib
 fire
 pyquery
 PyGithub
+pysqlite3
