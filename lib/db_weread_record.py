@@ -91,3 +91,15 @@ class DBWeReadRecord(object):
         cursor = self.connection.cursor()
         cursor.execute(sql, (book_id,))
         self.connection.commit()
+
+    def delete_bookmark(self, book_id, bookmark_id):
+        """
+        删除book_id, bookmark_id记录
+        :param book_id: 书籍ID
+        :param bookmark_id: 书签ID/章节ID
+        :return:
+        """
+        sql = f"delete from {self.TabName} where book_id=? and bookmark_id=?"
+        cursor = self.connection.cursor()
+        cursor.execute(sql, (book_id, bookmark_id))
+        self.connection.commit()

@@ -482,6 +482,7 @@ def made_readinfo_blocks(
     bookmark_id = "_stat.total_"
     _records = store.query(book_id, bookmark_id)
     if len(_records):
+        store.delete_bookmark(book_id, bookmark_id)
         client.blocks.delete(block_id=_records[0]["block_id"])
 
     longest_reading_time = weread.str_reading_time(rdetail.get("longestReadingTime", 0))
@@ -512,6 +513,7 @@ def made_readinfo_blocks(
     bookmark_id = "_stat.detail_"
     _records = store.query(book_id, bookmark_id)
     if len(_records):
+        store.delete_bookmark(book_id, bookmark_id)
         client.blocks.delete(block_id=_records[0]["block_id"])
     item = BlockItem(
         after=block_id,
