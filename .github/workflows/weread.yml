@@ -21,8 +21,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: weread sync
+        id: weread-sync
         run: |
           python main.py sync_read "${{secrets.WEREAD_COOKIE}}" "${{secrets.NOTION_TOKEN}}" "${{secrets.NOTION_DATABASE_ID}}" 
       - name: trending sync
+        id: trending-sync
         run: |
           python main.py sync_trending "${{secrets.NOTION_TOKEN}}" "${{secrets.NOTION_DATABASE_TRENDING}}" --git_token="${{secrets.GIT_TOKEN}}" 
+      - name: Commit files 
+        id: commit-files
+        run: |
+          if [ -n "$(git status --porcelain var/sync_read.db)" ]; then
+            git config --local user.email "github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add var/sync_read.db
+            git commit -m "sync: update db"
+            git push
