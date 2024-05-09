@@ -25,6 +25,10 @@ jobs:
         id: weread-sync
         run: |
           python main.py sync_read "${{secrets.WEREAD_COOKIE}}" "${{secrets.NOTION_TOKEN}}" "${{secrets.NOTION_DATABASE_ID}}" 
+      - name: trending sync
+        id: trending-sync
+        run: |
+          python main.py sync_trending "${{secrets.NOTION_TOKEN}}" "${{secrets.NOTION_DATABASE_TRENDING}}" --git_token="${{secrets.GIT_TOKEN}}" 
       - run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
