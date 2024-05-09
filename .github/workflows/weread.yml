@@ -28,12 +28,6 @@ jobs:
         id: trending-sync
         run: |
           python main.py sync_trending "${{secrets.NOTION_TOKEN}}" "${{secrets.NOTION_DATABASE_TRENDING}}" --git_token="${{secrets.GIT_TOKEN}}" 
-      - name: Commit files 
-        id: commit-files
-        run: |
-          if [ -n "$(git status --porcelain var/sync_read.db)" ]; then
-            git config --local user.email "github-actions[bot]@users.noreply.github.com"
-            git config --local user.name "github-actions[bot]"
-            git add var/sync_read.db
-            git commit -m "sync: update db"
-            git push
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+            commit_message: Update db
