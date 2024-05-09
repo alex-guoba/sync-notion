@@ -410,7 +410,7 @@ def made_comment_blocks(
 
     # 追加推荐评语
     if not summary:
-        return
+        return appending
 
     bookmark_id = "_comment_"
     block_id = None
@@ -459,9 +459,9 @@ def made_readinfo_blocks(
     rdetail = rinfo.get("readDetail")
 
     if not rdetail:
-        return []
+        return appending
     if not CONFIG.getboolean("weread.format", "EnableReadingDetail"):
-        return []
+        return appending
 
     bookmark_id = "_stat_"
     block_id = None
@@ -588,11 +588,12 @@ def sync_read(weread_cookie, notion_token, database_id):
     for _book in books:
         sort = _book["sort"]
         if sort <= latest_sort:  # 笔记无更新，跳过
-            logging.info("no need to update")
             continue
 
         book_dict = _book.get("book")
         book_id = book_dict.get("bookId")
+
+        logging.info("Start to synch book %s", book_id)
 
         chapters_list = wreader.get_chapter_list(book_id)
         bookmark_list = wreader.get_bookmark_list(book_id)
