@@ -29,9 +29,16 @@ jobs:
         id: trending-sync
         run: |
           python main.py sync_trending "${{secrets.NOTION_TOKEN}}" "${{secrets.NOTION_DATABASE_TRENDING}}" --git_token="${{secrets.GIT_TOKEN}}" 
-      - run: |
+      - name: Verify Changed files
+        uses: tj-actions/verify-changed-files@v20
+        id: verify-changed-files
+        with:
+          files: |
+              ./var/sync_read.db
+      - name: Commit
+        run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git add .
-          git commit -m "auto generated"
+          git add ./var/sync_read.db
+          git commit -m "auto sync"
           git push
