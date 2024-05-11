@@ -119,7 +119,7 @@ def create_or_update_page(
             "Rating": BlockHelper.number(rating),
             "Cover": BlockHelper.files("Cover", cover),
             "NoteCount": BlockHelper.number(note_count),
-            "RiviewCount": BlockHelper.number(review_count),
+            "ReviewCount": BlockHelper.number(review_count),
             "Category": BlockHelper.rich_text(category),
             "Intro": BlockHelper.rich_text(intro),
         }
