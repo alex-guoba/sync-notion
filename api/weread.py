@@ -113,7 +113,9 @@ class WeReadAPI:
             isbn = data["isbn"]
             rating = data["newRating"]/1000
             category = data.get("category", "")
-        return (isbn, rating, category)
+            intro = data.get("intro", "")
+
+        return (isbn, rating, category, intro)
     
     def get_read_info(self, bookId):
         """获取书籍的进度"""

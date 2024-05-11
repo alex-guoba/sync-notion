@@ -97,6 +97,7 @@ def create_or_update_page(
     rating=0,
     category="",
     note_count=0,
+    intro="",
     read_info=None,
 ):
     """插入到notion"""
@@ -118,6 +119,7 @@ def create_or_update_page(
             "Cover": BlockHelper.files("Cover", cover),
             "NoteCount": BlockHelper.number(note_count),
             "Category": BlockHelper.rich_text(category),
+            "Intro": BlockHelper.rich_text(intro),
         }
     )
 
@@ -615,7 +617,7 @@ def sync_read(weread_cookie, notion_token, database_id):
             ),
         )
 
-        isbn, rating, category = wreader.get_bookinfo(book_id)
+        isbn, rating, category, intro = wreader.get_bookinfo(book_id)
         read_info = wreader.get_read_info(book_id)
 
         # delete before insert again
@@ -634,6 +636,7 @@ def sync_read(weread_cookie, notion_token, database_id):
             rating=rating,
             category=category,
             note_count=_book.get("noteCount"),
+            intro=intro,
             read_info=read_info,
         )
 
