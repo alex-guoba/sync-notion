@@ -54,6 +54,7 @@ Python 3.10
    pip install -r requirements.txt
    python3 ./main.py sync_weread ${WEREAD_COOKIE} ${NOTION_TOKEN} ${NOTION_DATABASE_ID}
    ```
+9. 【可选】可以配合 [next-blogger](https://github.com/alex-guoba/next-blogger) 搭建自己的**读书笔记分享**网站。样式参考 [goroutine.cn](https://goroutine.cn/notes)
 
 ### 支持的配置项
 
