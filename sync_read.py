@@ -97,6 +97,7 @@ def create_or_update_page(
     rating=0,
     category="",
     note_count=0,
+    review_count=0,
     intro="",
     read_info=None,
 ):
@@ -118,6 +119,7 @@ def create_or_update_page(
             "Rating": BlockHelper.number(rating),
             "Cover": BlockHelper.files("Cover", cover),
             "NoteCount": BlockHelper.number(note_count),
+            "RiviewCount": BlockHelper.number(review_count),
             "Category": BlockHelper.rich_text(category),
             "Intro": BlockHelper.rich_text(intro),
         }
@@ -636,6 +638,7 @@ def sync_read(weread_cookie, notion_token, database_id):
             rating=rating,
             category=category,
             note_count=_book.get("noteCount"),
+            review_count=_book.get("reviewCount"),
             intro=intro,
             read_info=read_info,
         )
