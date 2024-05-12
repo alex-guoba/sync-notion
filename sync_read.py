@@ -17,6 +17,7 @@ from notion_client import Client
 from api import weread
 from api.notion import BlockHelper
 from config import CONFIG
+from sync.weread.calendar import sync_to_calener
 
 ROOT_NODE_ID = "#root"
 BOOK_MARK_KEY = "#bookmarks"
@@ -124,8 +125,6 @@ def create_or_update_page(
             "Intro": BlockHelper.rich_text(intro),
         }
     )
-
-    # print(page)
 
     if read_info:
         marked_status = read_info.get("markedStatus", 0)
@@ -582,7 +581,7 @@ def calculate_book_str_id(book_id):
     return result
 
 
-def sync_read(weread_cookie, notion_token, database_id):
+def sync_read(weread_cookie, notion_token, database_id, calendar_db_id = None):
     """sync weread reading notes to notion"""
     client = Client(auth=notion_token, log_level=logging.ERROR)
     latest_sort = get_db_latest_sort(client, database_id)
@@ -669,3 +668,6 @@ def sync_read(weread_cookie, notion_token, database_id):
             client, store, book_id, read_info, len(bookmark_list)
         )
         append_blocks(client, pid, appending, store, book_id)
+
+        if calendar_db_id:
+            sync_to_calener(client, calendar_db_id, read_info)

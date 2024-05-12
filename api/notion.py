@@ -235,7 +235,7 @@ class BlockHelper:
     @classmethod
     def date(cls, d):
         "generate date block"
-        return {"date": {"start": datetime.utcfromtimestamp(d).strftime("%Y-%m-%d %H:%M:%S"), "time_zone": "Asia/Shanghai"}}
+        return {"date": {"start": datetime.fromtimestamp(d).strftime("%Y-%m-%d %H:%M:%S"), "time_zone": "Asia/Shanghai"}}
 
     @classmethod
     def icon(cls, img):

@@ -24,7 +24,7 @@ jobs:
       - name: weread sync
         id: weread-sync
         run: |
-          python main.py sync_read "${{secrets.WEREAD_COOKIE}}" "${{secrets.NOTION_TOKEN}}" "${{secrets.NOTION_DATABASE_ID}}" 
+          python main.py sync_read "${{secrets.WEREAD_COOKIE}}" "${{secrets.NOTION_TOKEN}}" "${{secrets.NOTION_DATABASE_ID}}" --calendar_db_id="${{secrets.NOTION_DATABASE_CALENDAR}}"
       - name: trending sync
         id: trending-sync
         run: |
