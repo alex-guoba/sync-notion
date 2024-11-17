@@ -108,6 +108,10 @@ class WeReadAPI:
         params = dict(bookId=bookId)
         r = self.session.get(self.WEREAD_BOOK_INFO, params=params)
         isbn = ""
+        rating = 0
+        category = ""
+        intro = ""
+
         if r.ok:
             data = r.json()
             isbn = data["isbn"]

@@ -144,7 +144,7 @@ def create_or_update_page(
 
         # 完成时间
         if read_info.get("finishedDate"):
-            properties["FinishAt"] = BlockHelper.date(detail.get("finishedDate"))
+            properties["FinishAt"] = BlockHelper.date(read_info.get("finishedDate"))
 
     if pid is None:
         response = client.pages.create(
@@ -581,7 +581,7 @@ def calculate_book_str_id(book_id):
     return result
 
 
-def sync_read(weread_cookie, notion_token, database_id, calendar_db_id = None):
+def sync_read(weread_cookie, notion_token, database_id, calendar_db_id=None):
     """sync weread reading notes to notion"""
     client = Client(auth=notion_token, log_level=logging.ERROR)
     latest_sort = get_db_latest_sort(client, database_id)
