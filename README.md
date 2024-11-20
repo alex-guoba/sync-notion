@@ -19,7 +19,7 @@ Python 3.10
 
 1. star本项目
 
-2. fork这个工程
+2. fork这个工程，删除目录中的临时存储文件(./var/sync_read.db)
 
 3. 获取微信读书的Cookie: `WEREAD_COOKIE`
 
@@ -66,6 +66,10 @@ python3 ./main.py sync_weread ${WEREAD_COOKIE} ${NOTION_TOKEN} ${NOTION_DATABASE
 - action中环境变量`NOTION_DATABASE_CALENDAR`，命令行方式参考[action](./.github/workflows/weread.yml)。模板参考[这个](https://gelco.notion.site/5a17a1f794464652ade156c4c7572736?v=d961ee4d64864620b948b1a18fb1ebdd&pvs=4)
 
 - 注意：也需要在Connections添加你创建的Integration。流程与上面一致。
+
+3. 支持[Server酱](https://sct.ftqq.com/)微信通知，用于在同步完成时发送微信通知更新读书笔记数。
+
+- action中环境变量`SCKEY`，参考[action](./.github/workflows/weread.yml)。申请方式参考[Server酱](https://sct.ftqq.com/sendkey)。
 
 
 ### 增量同步说明

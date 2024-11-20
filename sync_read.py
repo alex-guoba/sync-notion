@@ -11,6 +11,7 @@ from collections import defaultdict
 
 from lib.db_weread_record import DBWeReadRecord
 from lib.page_block_list import PageBlockList
+from lib.serverchan import sc_send
 from treelib import Tree
 from notion_client import Client
 
@@ -581,13 +582,28 @@ def calculate_book_str_id(book_id):
     return result
 
 
-def sync_read(weread_cookie, notion_token, database_id, calendar_db_id=None):
+def send_wxnotify(wxnotify_key, read_stat):
+    """send wechat notify"""
+    if not wxnotify_key or len(read_stat) == 0:
+        return
+
+    content = "阅读进度更新啦: ~\n\n"
+    for stat in read_stat:
+        content += f"{stat.get('book_name')} : {stat.get('count')}条\n\n"
+
+    sc_send(wxnotify_key, "Sync-Notion阅读笔记通知", content)
+
+
+def sync_read(
+    weread_cookie, notion_token, database_id, calendar_db_id=None, wxnotify_key=None
+):
     """sync weread reading notes to notion"""
     client = Client(auth=notion_token, log_level=logging.ERROR)
     latest_sort = get_db_latest_sort(client, database_id)
 
     wreader = weread.WeReadAPI(weread_cookie)
     store = DBWeReadRecord("./var/sync_read.db")
+    read_stat = []
 
     books = wreader.get_notebooklist()
     for _book in books:
@@ -668,6 +684,16 @@ def sync_read(weread_cookie, notion_token, database_id, calendar_db_id=None):
             client, store, book_id, read_info, len(bookmark_list)
         )
         append_blocks(client, pid, appending, store, book_id)
+        if len(appending) > 0:
+            read_stat.append(
+                {
+                    "count": len(appending),
+                    "book_name": book_dict.get("title"),
+                }
+            )
 
         if calendar_db_id:
             sync_to_calener(client, calendar_db_id, read_info)
+
+    if wxnotify_key is not None and len(read_stat) != 0:
+        send_wxnotify(wxnotify_key, read_stat)
