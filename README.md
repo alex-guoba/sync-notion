@@ -173,6 +173,36 @@ python3 ./main.py sync_memos "${{secrets.NOTION_TOKEN}}" "${{DATABASE_ID}}" "${{
 ```
 
 
+## 同步ProductHunt产品列表到Notion
+
+### 使用
+
+与微信读书同步方法基本一致。产品列表参考[ProductHunt](https://www.producthunt.com/all)
+
+1. 获取NotionToken（可复用）
+
+2. 创建NotionDatabase，获取NotionDatabaseID， notion模板参考[这个](https://gelco.notion.site/1467b35a24cd80449eeadf5ed024cef5?v=1a470daa9fc0418d8682aaf789860d40&pvs=73)
+   
+3. 本地运行
+```shell
+python3 ./main.py sync_producthunt ${NOTION_TOKEN} ${DATABASE_ID}
+```
+
+```ini
+[producthunt.filter]
+; 过滤条件，可选
+MinVotes = 5
+MinComments = 5
+```
+
+也可配置github action来实现定期同步，有需要修改github action以及配置对应环境即可。
+
+```shell
+# git中配置好对应的环境变量，设置对应的action run指令即可
+python3 ./main.py sync_producthunt "${{secrets.NOTION_TOKEN}}" "${{DATABASE_ID_PH}}"
+```
+
+
 ## 感谢
 
 - [malinkang / weread_to_notion](https://github.com/malinkang/weread_to_notion)

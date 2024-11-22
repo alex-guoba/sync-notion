@@ -29,6 +29,10 @@ jobs:
         id: trending-sync
         run: |
           python main.py sync_trending "${{secrets.NOTION_TOKEN}}" "${{secrets.NOTION_DATABASE_TRENDING}}" --git_token="${{secrets.GIT_TOKEN}}"
+      - name: product-hunt sync
+        id: product-hunt-sync
+        run: |
+          python main.py sync_producthunt "${{secrets.NOTION_TOKEN}}" "${{secrets.NOTION_DATABASE_PH}}""
       - name: Verify Changed files
         uses: tj-actions/verify-changed-files@v20
         id: verify-changed-files

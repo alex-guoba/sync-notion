@@ -15,6 +15,7 @@ from datetime import datetime
 #         """pass"""
 #         pass
 
+
 class BlockHelper:
     """生成notion格式的工具函数"""
 
@@ -26,18 +27,16 @@ class BlockHelper:
 
     table_contents = {
         "type": "table_of_contents",
-        "table_of_contents": {
-            "color": "default"
-        }
+        "table_of_contents": {"color": "default"},
     }
 
     color_styles = {
-            1: "red",
-            2: "purple",
-            3: "blue",
-            4: "green",
-            5: "yellow",
-        }
+        1: "red",
+        2: "purple",
+        3: "blue",
+        4: "green",
+        5: "yellow",
+    }
 
     def __init__(self):
         pass
@@ -49,49 +48,57 @@ class BlockHelper:
 
     @classmethod
     def heading(cls, level, content):
-        """取heading格式"""""
+        """取heading格式""" ""
         heading_type = cls.headings.get(level, "heading_3")
         return {
             "type": heading_type,
             heading_type: {
-                "rich_text": [{
-                    "type": "text",
-                    "text": {
-                        "content": content,
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": content,
+                        },
                     }
-                }],
+                ],
                 "color": "default",
-                "is_toggleable": False
-            }
+                "is_toggleable": False,
+            },
         }
-    
+
     @classmethod
-    def table(cls, table_width: int, cells: list, has_column_header: bool = False, has_row_header: bool = False):
-        """table"""""
+    def table(
+        cls,
+        table_width: int,
+        cells: list,
+        has_column_header: bool = False,
+        has_row_header: bool = False,
+    ):
+        """table""" ""
         # heading_type = cls.headings.get(level, "heading_3")
         table = {
             "type": "table",
             "table": {
                 "table_width": table_width,
                 "has_column_header": has_column_header,
-                "has_row_header": has_row_header
-            }
+                "has_row_header": has_row_header,
+            },
         }
-        table['table']['children'] = [cls.table_row(cells)]
+        table["table"]["children"] = [cls.table_row(cells)]
 
         return table
 
     @classmethod
     def table_row(cls, content_list: list):
         """table row, see https://developers.notion.com/reference/block#table-rows .
-        When creating a table block via the Append block children endpoint, the table 
+        When creating a table block via the Append block children endpoint, the table
         must have at least one table_row whose cells array has the same length as the table_width.
         """
         table_row = {
             "type": "table_row",
             "table_row": {
                 "cells": [],
-            }
+            },
         }
         for content in content_list:
             item = [
@@ -111,23 +118,20 @@ class BlockHelper:
         return {
             "type": "quote",
             "quote": {
-                "rich_text": [{
-                    "type": "text",
-                    "text": {
-                        "content": content
-                    },
-                }],
-                "color": "default"
-            }
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {"content": content},
+                    }
+                ],
+                "color": "default",
+            },
         }
 
     @classmethod
     def divider(cls):
-        """"divier"""
-        return {
-            "type": "divider",
-            "divider": {}
-        }
+        """ "divier"""
+        return {"type": "divider", "divider": {}}
 
     @classmethod
     def emoj_style(cls, style, review_id):
@@ -151,17 +155,17 @@ class BlockHelper:
         return {
             "type": "callout",
             "callout": {
-                "rich_text": [{
-                    "type": "text",
-                    "text": {
-                        "content": content,
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": content,
+                        },
                     }
-                }],
-                "icon": {
-                    "emoji": emoji
-                },
+                ],
+                "icon": {"emoji": emoji},
                 "color": cls.color_styles.get(color, "default"),
-            }
+            },
         }
 
     @classmethod
@@ -173,14 +177,16 @@ class BlockHelper:
         return {
             "type": "paragraph",
             "paragraph": {
-                    "rich_text": [{
+                "rich_text": [
+                    {
                         "type": "text",
                         "text": {
-                            "content": emoji+content,
+                            "content": emoji + content,
+                        },
                     }
-                }],
-            "color": cls.color_styles.get(color, "default"),
-            }
+                ],
+                "color": cls.color_styles.get(color, "default"),
+            },
         }
 
     @classmethod
@@ -192,14 +198,16 @@ class BlockHelper:
         return {
             "type": "bulleted_list_item",
             "bulleted_list_item": {
-                "rich_text": [{
-                    "type": "text",
-                    "text": {
-                        "content": emoji+content,
+                "rich_text": [
+                    {
+                        "type": "text",
+                        "text": {
+                            "content": emoji + content,
+                        },
                     }
-                }],
+                ],
                 "color": cls.color_styles.get(color, "default"),
-            }
+            },
         }
 
     @classmethod
@@ -233,16 +241,21 @@ class BlockHelper:
         return {"select": {"name": option}}
 
     @classmethod
+    def multi_select(cls, selected_options: list[any]):
+        "generate multi-select block"
+        return {"multi_select": [{"name": option} for option in selected_options]}
+
+    @classmethod
     def date(cls, d):
         "generate date block"
-        return {"date": {"start": datetime.fromtimestamp(d).strftime("%Y-%m-%d %H:%M:%S"), "time_zone": "Asia/Shanghai"}}
+        return {
+            "date": {
+                "start": datetime.fromtimestamp(d).strftime("%Y-%m-%d %H:%M:%S"),
+                "time_zone": "Asia/Shanghai",
+            }
+        }
 
     @classmethod
     def icon(cls, img):
         """generate icon block"""
-        return {
-            "type": "external",
-            "external": {
-                "url": img
-            }
-        }
+        return {"type": "external", "external": {"url": img}}
