@@ -89,13 +89,24 @@ def _scrape() -> list[ProductItem]:
 
     content = pq(req.content)
     items = content("main div.flex-col div.flex-col div[class^='styles_item']")
+    if items.length == 0:
+        items = content("main div.flex-col div.flex-col section")
 
     for item in items:
+        logging.debug("parse product: %s", item)
         i = pq(item)
         url = i('a[href^="/posts/"]').eq(0).attr("href")
-        name = i("div.flex-col a strong").text()
-        description = i("div.flex-col a").text()
+
+        mid = i("div.flex-col a")
+        name = mid.eq(0).text()
+        description = mid.eq(1).text()
+        # name = i("div.flex-col a strong").text()
+        # description = i("div.flex-col a").text()
+
         comments = i("div.flex-col div.flex-row div").eq(0).text()
+        if not comments:
+            comments = i("button div.flex-col").eq(0).text()
+
         votes = i('button[data-test="vote-button"]').text()
 
         cover = i('a[href^="/posts/"] img').eq(0).attr("src")
@@ -180,7 +191,7 @@ def sync_producthunt(notion_token, database_id):
     products = _scrape()
     if not products:
         logging.error(
-            "ph scape [%s] error",
+            "ph scape error",
         )
         return
 
