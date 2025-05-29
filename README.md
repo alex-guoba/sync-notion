@@ -54,7 +54,7 @@ Python 3.10
 
 ```shell
 pip install -r requirements.txt
-python3 ./main.py sync_weread ${WEREAD_COOKIE} ${NOTION_TOKEN} ${NOTION_DATABASE_ID}
+python3 ./main.py sync_read ${WEREAD_COOKIE} ${NOTION_TOKEN} ${NOTION_DATABASE_ID}
 ```
 
 ### 高级特性
