@@ -1,4 +1,5 @@
-# 封装微信api的调用
+"""封装微信api的调用"""
+
 from http.cookies import SimpleCookie
 from requests.utils import cookiejar_from_dict
 import requests

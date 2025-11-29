@@ -1,4 +1,4 @@
-""" sync wereading history to private notion database & pages 
+"""sync wereading history to private notion database & pages
 author: alex-guoba
 """
 
@@ -9,14 +9,16 @@ from datetime import datetime
 import hashlib
 from collections import defaultdict
 
+from treelib.tree import Tree
+from notion_client import AsyncClient
+
+from api import notion, weread
+from api.notion import BlockHelper
+
 from lib.db_weread_record import DBWeReadRecord
 from lib.page_block_list import PageBlockList
 from lib.serverchan import sc_send
-from treelib import Tree
-from notion_client import Client
 
-from api import weread
-from api.notion import BlockHelper
 from config import CONFIG
 from sync.weread.calendar import sync_to_calener
 
@@ -43,7 +45,7 @@ class BlockItem:
         self.after = after
         self.bookmark = bookmark
         self.block = block
-        self.child = child
+        self.child = child if child else []
         self.bid = None
 
     def set_bid(self, bid):
@@ -51,11 +53,11 @@ class BlockItem:
         self.bid = bid
 
 
-def query_database(client, database_id, book_id):
+async def get_page_info(client: AsyncClient, data_source_id: str, book_id: str):
     """查询原page信息，并返回pageinfo和pid"""
     time.sleep(0.3)
-    response = client.databases.query(
-        database_id=database_id,
+    response = await client.data_sources.query(
+        data_source_id=data_source_id,
         filter={"property": "BookId", "rich_text": {"equals": book_id}},
     )
     pageinfo = None
@@ -85,9 +87,9 @@ def inherit_properties(page):
     return properties
 
 
-def create_or_update_page(
-    client,
-    database_id,
+async def create_or_update_page(
+    client: AsyncClient,
+    data_source_id: str,
     pageinfo,
     pid,
     book_name="",
@@ -104,7 +106,7 @@ def create_or_update_page(
     read_info=None,
 ):
     """插入到notion"""
-    parent = {"database_id": database_id, "type": "database_id"}
+    parent = {"data_source_id": data_source_id, "type": "data_source_id"}
 
     properties = inherit_properties(pageinfo)
 
@@ -148,23 +150,23 @@ def create_or_update_page(
             properties["FinishAt"] = BlockHelper.date(read_info.get("finishedDate"))
 
     if pid is None:
-        response = client.pages.create(
+        response = await client.pages.create(
             parent=parent, icon=BlockHelper.icon(cover), properties=properties
         )
         return response["id"], True
 
-    response = client.pages.update(
+    response = await client.pages.update(
         page_id=pid, icon=BlockHelper.icon(cover), properties=properties
     )
     return pid, False
 
 
-def list_page_blocks(client, pid):
+async def list_page_blocks(client: AsyncClient, pid: str):
     """query page blocks (children not included)"""
-    response = client.blocks.children.list(block_id=pid)
+    response = await client.blocks.children.list(block_id=pid)
     children = response["results"] if len(response.get("results")) > 0 else []
     while response.get("has_more"):
-        response = client.blocks.children.list(
+        response = await client.blocks.children.list(
             block_id=pid, start_cursor=response["next_cursor"]
         )
         children += response["results"] if len(response.get("results")) > 0 else []
@@ -173,7 +175,7 @@ def list_page_blocks(client, pid):
     return tailor
 
 
-def append_children(client, pid, after, children):
+async def append_children(client: AsyncClient, pid, after, children):
     """append child block to page. Notion API limit 100 blocker per appending"""
     results = []
     print("appending ", len(children), " blocks after ", after)
@@ -182,18 +184,24 @@ def append_children(client, pid, after, children):
         subchild = children[i * 100 : (i + 1) * 100]
         response = None
         if after:
-            response = client.blocks.children.append(
+            response = await client.blocks.children.append(
                 block_id=pid, children=subchild, after=after
             )
         else:
-            response = client.blocks.children.append(block_id=pid, children=subchild)
+            response = await client.blocks.children.append(
+                block_id=pid, children=subchild
+            )
         # Notion will return all the blocks start from the appending block. So we need to filter the result.
         results.extend(response.get("results")[: len(subchild)])
     return results if len(results) == len(children) else []
 
 
-def append_blocks(
-    client, pid: str, appending: list[BlockItem], store: DBWeReadRecord, book_id: str
+async def append_blocks(
+    client: AsyncClient,
+    pid: str,
+    appending: list[BlockItem],
+    store: DBWeReadRecord,
+    book_id: str,
 ):
     """append child block to page by group"""
     batch = []
@@ -207,21 +215,21 @@ def append_blocks(
         if block_id == item.after:
             batch.append(item.block)
             continue
-        _result = append_children(client, pid, block_id, batch)
+        _result = await append_children(client, pid, block_id, batch)
         result.extend(_result)
 
         block_id = item.after
         batch = [item.block]
 
     if len(batch) > 0:
-        _result = append_children(client, pid, block_id, batch)
+        _result = await append_children(client, pid, block_id, batch)
         result.extend(_result)
 
     for idx, item in enumerate(appending):
         bid = result[idx].get("id")
         item.set_bid(bid)
         if item.child:
-            append_children(client, bid, None, item.child)
+            await append_children(client, bid, None, item.child)
 
     # write to db
     for block in appending:
@@ -229,7 +237,7 @@ def append_blocks(
             store.insert(book_id, block.bookmark, block.bid)
 
 
-def get_db_latest_sort(client, database_id):
+async def get_db_latest_sort(client: AsyncClient, data_source_id: str) -> int:
     """获取database中的最新更新时间"""
     db_filter = {"property": "Sort", "number": {"is_not_empty": True}}
     sorts = [
@@ -238,8 +246,8 @@ def get_db_latest_sort(client, database_id):
             "direction": "descending",
         }
     ]
-    response = client.databases.query(
-        database_id=database_id, filter=db_filter, sorts=sorts, page_size=1
+    response = await client.data_sources.query(
+        data_source_id=data_source_id, filter=db_filter, sorts=sorts, page_size=1
     )
     if len(response.get("results")) == 1:
         return response.get("results")[0].get("properties").get("Sort").get("number")
@@ -382,7 +390,7 @@ def made_page_blocks(
     else:
         # no chapter info
         for data in bookmark_list:
-            bookmark_id = i.get("bookmarkId") or i.get("reviewId")
+            bookmark_id = data.get("bookmarkId") or data.get("reviewId")
             _records = store.query(bookID, bookmark_id)
             if len(_records) > 0:
                 continue
@@ -390,14 +398,14 @@ def made_page_blocks(
                 BlockItem(
                     bookmark=bookmark_id,
                     block=content_block(
-                        i.get("markText"),
-                        i.get("style"),
-                        i.get("colorStyle"),
-                        i.get("reviewId"),
+                        data.get("markText"),
+                        data.get("style"),
+                        data.get("colorStyle"),
+                        data.get("reviewId"),
                     ),
                     child=(
-                        [BlockHelper.quote(i.get("abstract"))]
-                        if i.get("abstract")
+                        [BlockHelper.quote(data.get("abstract"))]
+                        if data.get("abstract")
                         else None
                     ),
                 )
@@ -451,11 +459,11 @@ def made_comment_blocks(
     return appending
 
 
-def made_readinfo_blocks(
-    client: Client,
+async def made_readinfo_blocks(
+    client: AsyncClient,
     store: DBWeReadRecord,
     book_id: str,
-    rinfo: object,
+    rinfo: dict,
     bookmark_count: int,
 ) -> list[BlockItem]:
     """generate extra stat blocks to appending"""
@@ -487,7 +495,7 @@ def made_readinfo_blocks(
     _records = store.query(book_id, bookmark_id)
     if len(_records):
         store.delete_bookmark(book_id, bookmark_id)
-        client.blocks.delete(block_id=_records[0]["block_id"])
+        await client.blocks.delete(block_id=_records[0]["block_id"])
 
     longest_reading_time = weread.str_reading_time(rdetail.get("longestReadingTime", 0))
     longest_reading_date = datetime.fromtimestamp(
@@ -518,7 +526,7 @@ def made_readinfo_blocks(
     _records = store.query(book_id, bookmark_id)
     if len(_records):
         store.delete_bookmark(book_id, bookmark_id)
-        client.blocks.delete(block_id=_records[0]["block_id"])
+        await client.blocks.delete(block_id=_records[0]["block_id"])
     item = BlockItem(
         after=block_id,
         bookmark=bookmark_id,
@@ -594,12 +602,22 @@ def send_wxnotify(wxnotify_key, read_stat):
     sc_send(wxnotify_key, "Sync-Notion阅读笔记通知", content)
 
 
-def sync_read(
+async def sync_read(
     weread_cookie, notion_token, database_id, calendar_db_id=None, wxnotify_key=None
 ):
     """sync weread reading notes to notion"""
-    client = Client(auth=notion_token, log_level=logging.ERROR)
-    latest_sort = get_db_latest_sort(client, database_id)
+    client = AsyncClient(auth=notion_token, log_level=logging.ERROR)
+
+    data_source_id = await notion.get_datasource_id(client, database_id)
+    if not data_source_id:
+        logging.error("database %s has no data source", database_id)
+        return
+
+    calendar_data_source_id = ""
+    if calendar_db_id:
+        calendar_data_source_id = await notion.get_datasource_id(client, calendar_db_id)
+
+    latest_sort = await get_db_latest_sort(client, data_source_id)
 
     wreader = weread.WeReadAPI(weread_cookie)
     store = DBWeReadRecord("./var/sync_read.db")
@@ -638,10 +656,10 @@ def sync_read(
         read_info = wreader.get_read_info(book_id)
 
         # delete before insert again
-        pageinfo, pid = query_database(client, database_id, book_id)
-        pid, created = create_or_update_page(
+        pageinfo, pid = await get_page_info(client, data_source_id, book_id)
+        pid, created = await create_or_update_page(
             client,
-            database_id,
+            data_source_id,
             pageinfo,
             pid,
             book_name=book_dict.get("title"),
@@ -660,7 +678,7 @@ def sync_read(
 
         blocks = []
         if not created:
-            blocks = list_page_blocks(client, pid)
+            blocks = await list_page_blocks(client, pid)
         else:
             store.delete_book(book_id)
 
@@ -671,19 +689,19 @@ def sync_read(
             chapters_list,
             bookmark_list,
         )
-        append_blocks(client, pid, appending, store, book_id)
+        await append_blocks(client, pid, appending, store, book_id)
 
         appending = made_comment_blocks(
             store,
             book_id,
             summary,
         )
-        append_blocks(client, pid, appending, store, book_id)
+        await append_blocks(client, pid, appending, store, book_id)
 
-        appending = made_readinfo_blocks(
+        appending = await made_readinfo_blocks(
             client, store, book_id, read_info, len(bookmark_list)
         )
-        append_blocks(client, pid, appending, store, book_id)
+        await append_blocks(client, pid, appending, store, book_id)
         if len(appending) > 0:
             read_stat.append(
                 {
@@ -692,8 +710,8 @@ def sync_read(
                 }
             )
 
-        if calendar_db_id:
-            sync_to_calener(client, calendar_db_id, read_info)
+        if calendar_data_source_id:
+            await sync_to_calener(client, calendar_data_source_id, read_info)
 
     if wxnotify_key is not None and len(read_stat) != 0:
         send_wxnotify(wxnotify_key, read_stat)

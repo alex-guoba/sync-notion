@@ -6,8 +6,9 @@ import logging
 import time
 import requests
 from pyquery import PyQuery as pq
-from notion_client import Client
+from notion_client import AsyncClient
 
+from api import notion
 from config import CONFIG
 from api.notion import BlockHelper
 
@@ -40,12 +41,12 @@ class ProductItem:
 comments={self.comments} votes={self.votes} url={self.url} cover={self.cover}>"""
 
 
-def query_page(client: Client, database_id: str, name: str) -> bool:
+async def query_page(client: AsyncClient, data_source_id: str, name: str) -> bool:
     """check page exist or not"""
     time.sleep(0.3)
 
-    response = client.databases.query(
-        database_id=database_id,
+    response = await client.data_sources.query(
+        data_source_id=data_source_id,
         filter={"property": "Name", "rich_text": {"equals": name}},
     )
     if len(response["results"]):
@@ -53,9 +54,11 @@ def query_page(client: Client, database_id: str, name: str) -> bool:
     return False
 
 
-def _append_page(client: Client, database_id: str, prod: ProductItem) -> None | str:
+async def _append_page(
+    client: AsyncClient, data_source_id: str, prod: ProductItem
+) -> None | str:
     """插入page"""
-    parent = {"database_id": database_id, "type": "database_id"}
+    parent = {"data_source_id": data_source_id, "type": "data_source_id"}
     properties = {
         "Name": BlockHelper.title(prod.name),
         "Description": BlockHelper.rich_text(prod.desc),
@@ -65,7 +68,7 @@ def _append_page(client: Client, database_id: str, prod: ProductItem) -> None | 
         "URL": BlockHelper.url(prod.url),
         "Cover": BlockHelper.files("Cover", prod.cover),
     }
-    response = client.pages.create(
+    response = await client.pages.create(
         parent=parent, icon=BlockHelper.icon(prod.cover), properties=properties
     )
     return response["id"]
@@ -85,7 +88,7 @@ def _scrape() -> list[ProductItem]:
     req = requests.get(url, headers=headers, timeout=60)
     if req.status_code != 200:
         logging.error("access product hunt error. %d", req.status_code)
-        return
+        return []
 
     content = pq(req.content)
     items = content("main div.flex-col div.flex-col div[class^='styles_item']")
@@ -163,9 +166,9 @@ def _filter_product(prod: ProductItem) -> bool:
 
 
 # pylint: disable=line-too-long
-def _sync(
-    client: Client,
-    database_id: str,
+async def _sync(
+    client: AsyncClient,
+    data_source_id: str,
     products: list[ProductItem],
 ) -> None:
     for prod in products:
@@ -174,19 +177,23 @@ def _sync(
             continue
 
         time.sleep(0.3)  # avoid rate limit for notion API
-        if query_page(client, database_id, prod.name):
+        if await query_page(client, data_source_id, prod.name):
             continue
 
         # insert to db
         logging.info(prod)
 
-        _id = _append_page(client, database_id, prod)
+        _id = await _append_page(client, data_source_id, prod)
         print(_id)
 
 
-def sync_producthunt(notion_token, database_id):
+async def sync_producthunt(notion_token, database_id):
     """sync product hunt to notion"""
-    client = Client(auth=notion_token, log_level=logging.ERROR)
+    client = AsyncClient(auth=notion_token, log_level=logging.ERROR)
+    data_sources_id = await notion.get_datasource_id(client, database_id)
+    if not data_sources_id:
+        logging.error("database %s has no data source", database_id)
+        return
 
     products = _scrape()
     if not products:
@@ -196,4 +203,4 @@ def sync_producthunt(notion_token, database_id):
         return
 
     logging.info("ph scape total num [%s]", len(products))
-    _sync(client, database_id, products)
+    await _sync(client, data_sources_id, products)

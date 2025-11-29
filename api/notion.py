@@ -4,6 +4,8 @@
 
 from datetime import datetime
 
+from notion_client import AsyncClient
+
 
 # class NotionAPI:
 #     """暂未启用"""
@@ -259,3 +261,12 @@ class BlockHelper:
     def icon(cls, img):
         """generate icon block"""
         return {"type": "external", "external": {"url": img}}
+
+
+async def get_datasource_id(client: AsyncClient, database_id: str) -> str:
+    """获取data source"""
+    db = await client.databases.retrieve(database_id=database_id)
+    data_sources = db.get("data_sources", [])
+    if not data_sources:
+        return ""
+    return data_sources[0]["id"]
